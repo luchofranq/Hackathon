@@ -1,0 +1,47 @@
+
+#include "WiFi.h"
+#include "HTTPClient.h"
+WiFiClient client;
+
+const char* ssid = "--------";
+const char* password = "-------";
+String datos;
+
+
+void setup() {
+
+  Serial.begin(9600);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+  delay(500);
+  Serial.println("Connecting to WiFi..");
+  }
+
+  Serial.println("Connected to the WiFi network");
+
+}
+
+
+void loop() {
+ if (Serial.available() > 0) {
+  datos= Serial.readStringUntil('/n');
+  Serial.print(datos);
+  EnvioDatos();
+  delay (6
+  0000);
+  datos = "";
+   } 
+  }
+
+
+//-----------------------------------------------------------------------------------------------------------------
+void EnvioDatos(){
+ 
+  if (WiFi.status() == WL_CONNECTED){ 
+     HTTPClient http;  
+     http.begin(client,"http://192.168.0.153/conexionn/EspPost.php");
+     
+     http.addHeader("Content-Type", "application/x-www-form-urlencoded"); // defino texto plano..
+       int codigo_respuesta = http.POST(datos);
+  }
+}

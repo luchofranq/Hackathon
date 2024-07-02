@@ -1,0 +1,194 @@
+#include <DHT.h> // Incluimos la librería DHT
+#include <Wire.h>  
+#include <LiquidCrystal_I2C.h>  
+
+// Dirección I2C del PCF8574
+int addr = 0x27;  // Ajusta esto según la dirección real de tu módulo
+
+// Inicializar el objeto LCD con la dirección I2C y las dimensiones (16 columnas x 2 filas)
+LiquidCrystal_I2C lcd(addr, 16, 2);
+
+// Variables para almacenar los valores de los sensores
+
+// Definimos el pin al que está conectado el sensor DHT11
+#define DHTPIN 5
+
+// Definimos el tipo de sensor que estamos utilizando (DHT11 en este caso)
+#define DHTTYPE DHT11
+
+// Creamos una instancia del sensor DHT
+DHT dht(DHTPIN, DHTTYPE);
+
+// --- Constantes del Anemómetro ---
+const float pi = 3.14159265;     // Número de pi
+int periodo = 5000;               // Tiempo de medida (milisegundos)
+int tiempoRetardo = 2000;         // Intervalo entre las muestras (milisegundos)
+int radio = 14;                   // Radio del anemómetro (mm)
+
+// --- Variables Globales del Anemómetro ---
+unsigned int Muestra = 0;         // Almacena el número de muestras
+unsigned int contador = 0;        // Contador para el sensor
+unsigned int RPM = 0;             // Revoluciones por minuto
+float velocidadViento = 0;        // Velocidad del viento (m/s)
+float velocidadVientoKmh_value = 0;     // Velocidad del viento en km/h
+float volts, sol;
+
+String datos1;
+
+int llueve = A0;
+int lluvia;
+
+void setup() {
+  // Inicializamos la comunicación serial
+  Serial.begin(9600);
+  pinMode(8,INPUT);
+  
+   Wire.begin();
+  lcd.init();
+  lcd.backlight();
+  // Inicializamos el sensor DHT
+  dht.begin();
+  pinMode(A0,INPUT);
+  
+  // Configuración del pin para el anemómetro
+  pinMode(2, INPUT);             // Configura el pin digital 2 como entrada
+  digitalWrite(2, HIGH);         // Activa la resistencia pull-up interna
+}
+
+void loop() {
+
+  llueve = analogRead(A0); 
+  //Serial.print("leo esto:");
+  //Serial.print(llueve);
+  
+  if(llueve >= 400){
+  lluvia = 1; // llueve
+  
+
+}
+  if(llueve < 400){
+  lluvia = 0; // no llueve
+}
+/*Serial.print(" ");
+Serial.print("lluvia= ");
+Serial.println(lluvia);
+delay(500);*/
+
+  sol = analogRead(A1);
+  volts = map(sol,0,750,0,5);
+  //Serial.println(sol);
+  //Serial.println(volts);
+
+  
+  //Lecture del panel solar
+  
+  // *** Lectura del sensor DHT11 ***
+  // Esperamos un momento para que el sensor DHT se estabilice
+  delay(2000);
+
+
+  // Leemos la temperatura desde el sensor DHT
+  float temperatura = dht.readTemperature();
+  // Leemos la humedad desde el sensor DHT
+  float humedad = dht.readHumidity();
+  // Verificamos si la lectura fue exitosa
+  if (isnan(temperatura) || isnan(humedad)) {
+    Serial.println("Error al leer desde el sensor DHT11");
+  } else {
+    // Imprimimos los valores de temperatura y humedad
+  
+    
+
+  }
+
+  // *** Medición del anemómetro ***
+  Muestra++;
+ 
+  velocidadVientoAnemometro();
+  calcularRPM();
+
+  // Imprimir velocidad en m/s
+  velocidadVientoMs();
+
+
+  // Imprimir velocidad en km/h
+  velocidadVientoKmh();
+ 
+  
+  // Esperar un tiempo antes de la próxima lectura
+  delay(1000); // Ejemplo: esperar 1 segundo entre lecturas
+  // Esperamos un intervalo antes de realizar la próxima lectura
+  delay(tiempoRetardo);
+  datos1 = "temperatura=" + String(temperatura) + "&humedad=" + String(humedad)+ "&velocidad=" + String(velocidadVientoKmh_value) + "&solar=" + String(volts) + "&rain=" + String(lluvia);  
+  //datos1 = "temperatura=" + String(30) + "&humedad=" + String(30)+ "&velocidad=" + String(30) + "&solar=" + String(30) + "&rain=" + String(1);  
+    lcd.clear(); // Limpiar la pantalla LCD
+  
+  // Escribir los valores en la pantalla
+  lcd.setCursor(0, 0);
+  lcd.print("Temp: ");
+  lcd.print(temperatura);
+  lcd.print(" C");
+delay(2000);
+lcd.clear();
+
+  lcd.setCursor(0, 1);
+  lcd.print("Humedad: ");
+  lcd.print(humedad);
+  lcd.print("%");
+  delay(2000);
+lcd.clear();
+
+  lcd.setCursor(0, 0);
+  lcd.print("Viento: ");
+  lcd.print(velocidadVientoKmh_value);
+  lcd.print(" km/h");
+  delay(2000);
+lcd.clear();
+
+  lcd.setCursor(0, 1);
+  lcd.print("Solar: ");
+  lcd.print(volts);
+  lcd.print("V");
+  delay(2000);
+lcd.clear();
+
+  lcd.setCursor(0, 1);
+  lcd.print("Lluvia: ");
+  lcd.print(lluvia);
+  delay(2000);
+lcd.clear();
+  Serial.println(datos1);
+  
+}
+
+// Función para medir la velocidad del viento
+void velocidadVientoAnemometro() {
+  velocidadViento = 0;
+  velocidadVientoKmh_value = 0;
+
+  contador = 0;
+  attachInterrupt(0, sumarContador, RISING);
+  unsigned long millis();
+  long tiempoInicio = millis();
+  while (millis() < tiempoInicio + periodo) {}
+}
+
+// Función para calcular RPM
+void calcularRPM() {
+  RPM = ((contador) * 60) / (periodo / 1000); // Calcula revoluciones por minuto (RPM)
+}
+
+// Función para calcular la velocidad del viento en m/s
+void velocidadVientoMs() {
+  velocidadViento = ((4 * pi * radio * RPM) / 60) / 1000; // Calcula la velocidad del viento en m/s
+}
+
+// Función para calcular la velocidad del viento en km/h
+void velocidadVientoKmh() {
+  velocidadVientoKmh_value = (((4 * pi * radio * RPM) / 60) / 1000) * 3.6; // Calcula la velocidad del viento en km/h
+}
+
+// Función para incrementar el contador de RPM
+void sumarContador() {
+  contador++;
+}

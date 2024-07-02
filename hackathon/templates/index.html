@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediciones del Mercosur</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <a class="navbar-brand" href="#">Mercosur</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link" href="/">Inicio</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/mediciones">Mediciones</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <div class="text-center">
+        <h1>Bienvenido al Proyecto del Mercosur</h1>
+        <p class="lead">Consulta las mediciones meteorológicas de los países del Mercosur.</p>
+    </div>
+    <div id="map" style="height: 600px;"></div>
+</div>
+
+<footer>
+    <div class="contenedor-footer">
+        <div class="content-foo">
+            <h4>Teléfono</h4>
+            <p>0985-415-435</p>
+        </div>
+        <div class="content-foo">
+            <h4>Email</h4>
+            <p>JhoaóGamer777@gmail.com</p>
+        </div>
+        <div class="content-foo">
+            <div class="redes-sociales">
+                <a href=""><i class="fab fa-facebook"></i></a>
+                <a href=""><i class="fab fa-twitter"></i></a>
+                <a href="" target="_blank"><i class="fab fa-instagram"></i></a>
+                <a href=""><i class="fab fa-google-plus"></i></a>
+                <a href=""><i class="fab fa-youtube"></i></a>
+            </div>
+        </div>
+        <div class="content-foo">
+            <h4>Local</h4>
+            <p>Asunción <br> Av Dr. Guido Boggiani</p>
+        </div>
+        <div class="content-foo">
+            <h4>Desarrolladores</h4>
+            <p>Santiago Ariel Villamayor Gauto</p>
+        </div>
+    </div>
+    <h2 class="titulo-final">&copy; Mercosur Design | Copyrigth &2024 </h2>
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const map = L.map('map', {
+            center: [-23.442503, -58.443832], // Centrado en Sudamérica
+            zoom: 4, // Nivel de zoom inicial
+            dragging: false, // Deshabilita el movimiento del mapa
+            zoomControl: false, // Deshabilita el control de zoom
+            scrollWheelZoom: false, // Deshabilita el zoom con la rueda del ratón
+            doubleClickZoom: false, // Deshabilita el zoom con doble clic
+            boxZoom: false, // Deshabilita el zoom con el rectángulo de selección
+            keyboard: false, // Deshabilita el movimiento del mapa con el teclado
+            tap: false, // Deshabilita el zoom y el movimiento en dispositivos táctiles
+            touchZoom: false // Deshabilita el zoom táctil
+        });
+
+        const countryCoordinates = {
+            'paraguay': [-25.301111, -57.571167],
+            'uruguay': [-32.522779, -55.765835],
+            'argentina': [-38.416097, -63.616672],
+            'brasil': [-14.235004, -51.92528]
+        };
+
+        const bounds = [
+            [-56.9, -105.2], // Suroeste de América Latina
+            [14.7, -28.6]    // Noreste de América Latina
+        ];
+
+        map.fitBounds(bounds);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        function getStaticUrl(filename) {
+            return '/static/logos/' + filename;
+        }
+
+        function mostrarUltimasMedicionesParaguay() {
+            fetch('/api/ultimas-mediciones/paraguay')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error:', data.error);
+                        return;
+                    }
+
+                    const popupContent = `
+                        <div>
+                            <img src="${getStaticUrl('paraguay.png')}" alt="Paraguay" width="50" height="50"><br>
+                            <strong>Temperatura:</strong> ${data.temperatura}°C<br>
+                            <strong>Humedad:</strong> ${data.humedad}%<br>
+                            <strong>Fecha y Hora:</strong> ${data.fecha}<br>
+                            <strong>Velocidad del Viento:</strong> ${data.velocidad} m/s<br>
+                            <strong>Energia Solar</strong> ${data.energia} W/m²<br>
+                            <a href="http://127.0.0.1:5000/mediciones">Ver Más</a>
+                        </div>
+                    `;
+
+                    const paraguayMarker = L.marker(countryCoordinates['paraguay']).addTo(map);
+                    paraguayMarker.bindPopup(popupContent);
+                })
+                .catch(error => {
+                    console.error('Error al obtener las mediciones de Paraguay:', error);
+                });
+        }
+
+        mostrarUltimasMedicionesParaguay();
+    });
+</script>
+</body>
+</html>
